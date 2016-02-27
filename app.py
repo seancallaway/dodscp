@@ -1,10 +1,10 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash
+from flask import Flask, render_template, redirect, url_for, request, session, flash, g
 from functools import wraps
 import sqlite3
 
 app = Flask(__name__)
 
-app.datebase = "dodscp.db"
+app.database = "dodscp.db"
 
 # TODO: Move and replace this.
 app.secret_key = "OgV@DeND@qywQ@pIvh4l@qFifyb"
@@ -38,7 +38,11 @@ def connect_db():
 @app.route('/')
 @login_required
 def home():
-    return render_template('index.html')
+    g.db = connect_db()
+    cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 10;')
+    actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
+    g.db.close()
+    return render_template('index.html', actions=actions)
 
 #
 # WELCOME PAGE

@@ -4,5 +4,12 @@
 <h1>Welcome to DODSCP!</h1>
 <br />
 <p><a href="/logout">Click here</a> to logout.</p>
-
-{% endblock %}            
+<br />
+<h3>Latest Actions</h3>
+<table>
+<tr><td><strong>TIME</strong></td><td>&nbsp;&nbsp;&nbsp;</td><td><strong>USER</strong></td><td>&nbsp;&nbsp;&nbsp;</td><td><strong>ACTION</strong></td></tr>
+{% for action in actions %}
+    <tr><td>{{ action.time }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.user }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.action }}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}
