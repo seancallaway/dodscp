@@ -1,7 +1,10 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from functools import wraps
+import sqlite3
 
 app = Flask(__name__)
+
+app.datebase = "dodscp.db"
 
 # TODO: Move and replace this.
 app.secret_key = "OgV@DeND@qywQ@pIvh4l@qFifyb"
@@ -19,6 +22,13 @@ def login_required(f):
             flash('You must be logged in to view this page.')
             return redirect(url_for('login'))
     return wrap
+
+##
+# SQLite Database Connector
+# Returns the db connection.
+def connect_db():
+    return sqlite3.connect(app.database)
+            
 
 ####################################### PAGE FUNCTIONS ######################################
 
