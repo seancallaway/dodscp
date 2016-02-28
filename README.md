@@ -10,5 +10,5 @@ written in Python using Flask.
 
 ## Configuration
 
-__app.secret_key__ - Set this to a random key. Seriously. Do it.
-__app.script__ - Set this to the path to your LGSM script.
+* __app.secret_key__ - Set this to a random key. Seriously. Do it.
+* __app.script__ - Set this to the path to your LGSM script.
