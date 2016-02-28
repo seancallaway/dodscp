@@ -70,7 +70,15 @@ def create_user(login, password, isAdmin=0):
     g.db.commit()
     g.db.close()
 
-            
+##
+# Is the user an admin?
+def is_admin(uid):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT isADMIN FROM users WHERE id=?', uid)
+    result = cur.fetchone()
+    if result[0] > 0:
+        return True
+    return False
 
 ####################################### PAGE FUNCTIONS ######################################
 
@@ -132,6 +140,7 @@ def login():
         else:
             session['logged_in'] = True
             session['uid'] = uid
+            session['priv'] = is_admin(uid)
             flash('You were just logged in.')
             return redirect(url_for('home'))
         #if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
@@ -148,6 +157,8 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
+    session.pop('uid', None)
+    session.pop('priv', None)
     flash('You were just logged out.')
     return redirect(url_for('welcome'))
 
