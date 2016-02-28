@@ -160,7 +160,7 @@ def logout():
     session.pop('uid', None)
     session.pop('priv', None)
     flash('You were just logged out.')
-    return redirect(url_for('welcome'))
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True)
