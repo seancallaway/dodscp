@@ -1,7 +1,10 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash, g, Markup
 from functools import wraps
 from subprocess import check_output
+from hashlib import sha256
+from uuid import uuid4
 import sqlite3
+
 
 app = Flask(__name__)
 
@@ -30,7 +33,52 @@ def login_required(f):
 # Returns the db connection.
 def connect_db():
     return sqlite3.connect(app.database)
-            
+
+##
+# Check login
+#
+def check_login(login, password):
+    if login == '' or password == '':
+        return False
+    else:
+        g.db = connect_db()
+        cur = g.db.execute('SELECT salt FROM users WHERE login = "' + login + '"')
+        salt = cur.fetchone()
+        if salt:
+            salted = password + salt[0]
+        else:
+            #unsalted password or invalid login
+            g.db.close()
+            return False
+        hashed = sha256(salted.encode()).hexdigest()
+        cur = g.db.execute('SELECT id FROM users WHERE login = "' + login + '" AND password = "' + hashed + '"')
+        uid = cur.fetchone()
+        g.db.close()
+        if uid:
+            return uid[0]
+        else:
+            return False
+
+##
+# Create user
+def create_user(login, password, isAdmin=0):
+    salt = uuid4().hex
+    hashed = sha256(password.encode() + salt.encode()).hexdigest()
+
+    g.db = connect_db()
+    cur = g.db.execute('INSERT INTO users(login, password, salt, isAdmin) VALUES (?,?,?,?)', (login, hashed, salt, isAdmin))
+    g.db.commit()
+    g.db.close()
+
+##
+# Is the user an admin?
+def is_admin(uid):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT isADMIN FROM users WHERE id=?', uid)
+    result = cur.fetchone()
+    if result[0] > 0:
+        return True
+    return False
 
 ####################################### PAGE FUNCTIONS ######################################
 
@@ -86,12 +134,21 @@ def welcome():
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
-            error = 'Invalid Credentials. Please try again.'
+        uid = check_login(request.form['username'], request.form['password'])
+        if uid == False:
+            error = 'Invalid credentials. Please try again.'
         else:
             session['logged_in'] = True
+            session['uid'] = uid
+            session['priv'] = is_admin(uid)
             flash('You were just logged in.')
             return redirect(url_for('home'))
+        #if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
+        #    error = 'Invalid Credentials. Please try again.'
+        #else:
+        #    session['logged_in'] = True
+        #    flash('You were just logged in.')
+        #    return redirect(url_for('home'))
     return render_template('login.html', error=error)
 
 #
@@ -100,6 +157,8 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
+    session.pop('uid', None)
+    session.pop('priv', None)
     flash('You were just logged out.')
     return redirect(url_for('welcome'))
 
