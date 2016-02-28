@@ -1,10 +1,12 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash, g
+from flask import Flask, render_template, redirect, url_for, request, session, flash, g, Markup
 from functools import wraps
+from subprocess import check_output
 import sqlite3
 
 app = Flask(__name__)
 
 app.database = "dodscp.db"
+app.script = "/home/sean/dodsserver"
 
 # TODO: Move and replace this.
 app.secret_key = "OgV@DeND@qywQ@pIvh4l@qFifyb"
@@ -42,16 +44,24 @@ def home():
     if request.method == 'POST':
         if request.form['action'] == 'start':
             # run the start command
-            results = "Starting the server..."
+            results = "Starting the server...<br /><br />"
+            results += check_output([app.script, "start"])
+            results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'stop':
             # run the stop action
-            results = "Stopping the server..."
+            results = "Stoping the server...<br /><br />"
+            results += check_output([app.script, "stop"])
+            results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'restart':
             # run the restart action
-            results = "Restarting the server..."
+            results = "Restarting the server...<br /><br />"
+            results += check_output([app.script, "restart"])
+            results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'update':
             # run the update action
-            results = "Updating the server..."
+            results = "Updating the server...<br /><br />"
+            results += check_output([app.script, "update"])
+            results = Markup(results.replace('\n', '<br />'))
         else:
             # invalid action!
             results = "INVALID ACTION!"
