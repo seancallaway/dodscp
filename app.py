@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash, g, Markup
 from functools import wraps
 from subprocess import check_output
+from hashlib import sha256
 import sqlite3
 
 app = Flask(__name__)
@@ -30,6 +31,27 @@ def login_required(f):
 # Returns the db connection.
 def connect_db():
     return sqlite3.connect(app.database)
+
+##
+# Check login
+#
+def check_login(login, password):
+    if login == '' or password == '':
+        return False
+    else:
+        g.db = connect_db()
+        cur = g.db.execute('SELECT salt FROM users WHERE login = "' + login + '"')
+        salt = cur.fetchone()[0]
+        salted = password + salt
+        hashed = sha256(salted.encode()).hexdigest()
+        cur = g.db.execute('SELECT id FROM users WHERE login = "' + login + '" AND password = "' + hashed + '"')
+        uid = cur.fetchone()
+        g.db.close()
+        if uid:
+            return uid[0]
+        else:
+            return False
+     
             
 
 ####################################### PAGE FUNCTIONS ######################################
@@ -86,12 +108,20 @@ def welcome():
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
-            error = 'Invalid Credentials. Please try again.'
+        uid = check_login(request.form['username'], request.form['password'])
+        if uid == False:
+            error = 'Invalid credentials. Please try again.'
         else:
             session['logged_in'] = True
+            session['uid'] = uid
             flash('You were just logged in.')
             return redirect(url_for('home'))
+        #if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
+        #    error = 'Invalid Credentials. Please try again.'
+        #else:
+        #    session['logged_in'] = True
+        #    flash('You were just logged in.')
+        #    return redirect(url_for('home'))
     return render_template('login.html', error=error)
 
 #
