@@ -12,4 +12,18 @@
     <tr><td>{{ action.time }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.user }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.action }}</td></tr>
 {% endfor %}
 </table>
+<br />
+<h3>Actions</h3>
+<form action="" method="post">
+    <select name="action">
+        <option value="start">Start</option>
+        <option value="stop">Stop</option>
+        <option value="restart" selected>Restart</option>
+        <option value="update">Update</option>
+    </select>
+    <input class="btn btn-default" type="submit" value="Execute" />
+</form>
+<br />
+<p>{{ results }}</p>
+<br />
 {% endblock %}

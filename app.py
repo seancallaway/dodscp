@@ -35,14 +35,32 @@ def connect_db():
 #
 # INDEX PAGE
 #
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
+    results = '';
+    if request.method == 'POST':
+        if request.form['action'] == 'start':
+            # run the start command
+            results = "Starting the server..."
+        elif request.form['action'] == 'stop':
+            # run the stop action
+            results = "Stopping the server..."
+        elif request.form['action'] == 'restart':
+            # run the restart action
+            results = "Restarting the server..."
+        elif request.form['action'] == 'update':
+            # run the update action
+            results = "Updating the server..."
+        else:
+            # invalid action!
+            results = "INVALID ACTION!"
+
     g.db = connect_db()
     cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 10;')
     actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
     g.db.close()
-    return render_template('index.html', actions=actions)
+    return render_template('index.html', actions=actions, results=results)
 
 #
 # WELCOME PAGE
