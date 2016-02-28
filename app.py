@@ -41,8 +41,13 @@ def check_login(login, password):
     else:
         g.db = connect_db()
         cur = g.db.execute('SELECT salt FROM users WHERE login = "' + login + '"')
-        salt = cur.fetchone()[0]
-        salted = password + salt
+        salt = cur.fetchone()
+        if salt:
+            salted = password + salt[0]
+        else:
+            #unsalted password or invalid login
+            g.db.close()
+            return False
         hashed = sha256(salted.encode()).hexdigest()
         cur = g.db.execute('SELECT id FROM users WHERE login = "' + login + '" AND password = "' + hashed + '"')
         uid = cur.fetchone()
