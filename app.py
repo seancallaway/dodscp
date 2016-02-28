@@ -2,7 +2,9 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 from functools import wraps
 from subprocess import check_output
 from hashlib import sha256
+from uuid import uuid4
 import sqlite3
+
 
 app = Flask(__name__)
 
@@ -56,7 +58,18 @@ def check_login(login, password):
             return uid[0]
         else:
             return False
-     
+
+##
+# Create user
+def create_user(login, password, isAdmin=0):
+    salt = uuid4().hex
+    hashed = sha256(password.encode() + salt.encode()).hexdigest()
+
+    g.db = connect_db()
+    cur = g.db.execute('INSERT INTO users(login, password, salt, isAdmin) VALUES (?,?,?,?)', (login, hashed, salt, isAdmin))
+    g.db.commit()
+    g.db.close()
+
             
 
 ####################################### PAGE FUNCTIONS ######################################
