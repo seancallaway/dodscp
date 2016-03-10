@@ -115,6 +115,14 @@ def is_admin(uid):
     return False
 
 ##
+# Get login from UID
+def get_login(uid):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT login FROM users WHERE id=' + str(uid))
+    result = cur.fetchone()
+    return result[0]
+
+##
 # Does this user already exist
 def user_exists(login):
     g.db = connect_db()
@@ -227,6 +235,51 @@ def changepass():
             flash('The passwords you entered do not match. Please try again.')
             return render_template('changepass.html')
     return render_template('changepass.html')
+
+#
+# EDIT USER PAGE
+#
+@app.route('/edituser', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edituser():
+    if request.method == 'POST':
+        if request.form['step'] == "1":
+            # select the user and show edit fields
+            login = get_login(request.form['user'])
+            return render_template('edituser.html', userselected=True, user=login, acp=session['priv'], username=session['username'])
+        elif request.form['step'] == "2":
+            # change user
+            login = request.form['username']
+            if request.form['pass1'] != "":
+                if request.form['pass1'] == request.form['pass2']:
+                    print "Changing password for " + login + " to " + request.form['pass1']
+                    change_password(login, request.form['pass1'])
+                    admin = 0
+                    if request.form['status'] == 'admin':
+                        admin = 1
+                    change_admin(login, admin)
+                    flash('The user has been updated.')
+                    return redirect(url_for('edituser'))
+                else:
+                    flash('The passwords you entered do not match. Please try again.')
+                    return render_template('edituser.html', userselected=True, user=login, acp=session['priv'], username=session['username'])
+            else:
+                # no password entered. Just change status.
+                admin = 0
+                if request.form['status'] == 'admin':
+                    admin = 1
+                change_admin(login, admin)
+                flash('The user has been updated.')
+                return redirect(url_for('edituser'))
+            return render_template('edituser.html', acp=session['priv'], username=session['username'])
+                    
+    g.db = connect_db()
+    cur = g.db.execute('SELECT id, login FROM users WHERE login != "ADMIN"')
+    users = [dict(uid=row[0], login=row[1]) for row in cur.fetchall()]
+    g.db.close()
+    return render_template('edituser.html', users=users, acp=session['priv'], username=session['username'])
+
 
 #
 # ADD USER PAGE

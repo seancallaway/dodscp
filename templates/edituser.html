@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Edit A User</h1>
+
+{% if userselected %}
+
+<h2>Editing {{ user }}</h2>
+<br />
+<form action="" method="post">
+    <input type="hidden" name="step" value="2" />
+    <input type="hidden" name="username" value="{{ user }}" />
+    <br />
+    Leave the password fields blank if you don't desire to change the user's password.<br />
+    <input type="password" placeholder="Enter new password" name="pass1" />
+    <br />
+    <input type="password" placeholder="Reenter new password" name="pass2" />
+    <br />
+    User Type: 
+    <select name="status">
+        <option value="user" selected>User</option>
+        <option value="admin">Admin</option>
+    </select>
+    <br />
+    <input class="btn btn-default" type="submit" value="Change" />
+</form>
+
+{% else %}
+
+<br />
+<form action="" method="post">
+    <input type="hidden" name="step" value="1" />
+    <select name="user">
+        {% for user in users %}
+        <option value="{{ user.uid }}">{{ user.login }}</option>
+        {% endfor %}
+    </select>
+    <br />
+    <input class="btn btn-default" type="submit" value="Edit" />
+</form>
+
+{% endif %}
+
+{% endblock %}
