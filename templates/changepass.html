@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Change Password</h1>
+<br />
+<form action="" method="post">
+    <input type="password" placeholder="Enter new password" name="pass1" value="{{ request.form.pass1 }}" />
+    <br />
+    <input type="password" placeholder="Reenter new password" name="pass2" value="{{ request.form.pass2 }}" />
+    <br />
+    <input class="btn btn-default" type="submit" value="Change" />
+</form>
+
+{% endblock %}

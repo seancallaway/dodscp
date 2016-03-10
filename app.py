@@ -60,6 +60,18 @@ def check_login(login, password):
             return False
 
 ##
+# Change password
+#
+def change_password(login, password):
+    salt = uuid4().hex
+    hashed = sha256(password.encode() + salt.encode()).hexdigest()
+
+    g.db = connect_db()
+    cur = g.db.execute('UPDATE users SET password=?, salt=? WHERE login=?', (hashed, salt, login))
+    g.db.commit()
+    g.db.close()
+
+##
 # Create user
 def create_user(login, password, isAdmin=0):
     salt = uuid4().hex
@@ -163,6 +175,28 @@ def logout():
     session.pop('username', None)
     flash('You were just logged out.')
     return redirect(url_for('home'))
+
+#
+# CHANGE PASSWORD PAGE
+#
+@app.route('/changepass', methods=['GET', 'POST'])
+@login_required
+def changepass():
+    if request.method == 'POST':
+        # process password change
+        if request.form['pass1'] == request.form['pass2']:
+            change_password(session['username'], request.form['pass1'])
+            session.pop('logged_in', None)
+            session.pop('uid', None)
+            session.pop('priv', None)
+            session.pop('username', None)
+            flash('Your password has been changed. Please login using your new password.')
+            return redirect(url_for('home'))
+        else:
+            flash('The passwords you entered do not match. Please try again.')
+            return render_template('changepass.html')
+    return render_template('changepass.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
