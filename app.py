@@ -33,7 +33,7 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        if is_admin(uid):
+        if is_admin(session['uid']):
             return f(*args, **kwargs)
         else:
             flash('You must be an administrator to view that page.')
@@ -111,6 +111,15 @@ def is_admin(uid):
     cur = g.db.execute('SELECT isADMIN FROM users WHERE id=' + str(uid))
     result = cur.fetchone()
     if result[0] > 0:
+        return True
+    return False
+
+##
+# Does this user already exist
+def user_exists(login):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT id FROM users WHERE login= "' + login + '"')
+    if len(cur.fetchall()) > 0:
         return True
     return False
 
@@ -218,6 +227,31 @@ def changepass():
             flash('The passwords you entered do not match. Please try again.')
             return render_template('changepass.html')
     return render_template('changepass.html')
+
+#
+# ADD USER PAGE
+#
+@app.route('/adduser', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def adduser():
+    if request.method == 'POST':
+        if request.form['pass1'] == request.form['pass2']:
+            if user_exists(request.form['username']) == False:
+                # create the user
+                admin = 0
+                if request.form['status'] == 'admin':
+                    admin = 1
+                create_user(request.form['username'], request.form['pass1'], admin)
+                flash(request.form['username'] + ' has been created.')
+                return render_template('adduser.html', acp=session['priv'], username=session['username'])
+            else:
+                flash('The username you entered is already in use.')
+                return render_template('adduser.html', acp=session['priv'], username=session['username'])
+        else:
+            flash('The passwords you entered do not match. Please try again.')
+            return render_template('adduser.html', acp=session['priv'], username=session['username'])
+    return render_template('adduser.html', acp=session['priv'], username=session['username'])
 
 
 if __name__ == '__main__':
