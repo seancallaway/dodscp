@@ -280,6 +280,18 @@ def edituser():
     g.db.close()
     return render_template('edituser.html', users=users, acp=session['priv'], username=session['username'])
 
+#
+# LOGS PAGE
+#
+@app.route('/logs')
+@login_required
+@admin_required
+def logs():
+    g.db = connect_db()
+    cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 50;')
+    actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
+    g.db.close()
+    return render_template('logs.html', actions=actions, acp=session['priv'], username=session['username'])
 
 #
 # ADD USER PAGE
