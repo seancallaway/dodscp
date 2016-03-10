@@ -27,7 +27,15 @@
                 {% endif %}
                 {% if acp %}
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="/acp">ACP</a></li>
+                    <li class="dropdown">
+                        <a href="#" data-toggle="dropdown" class="dropdown-toggle">ACP <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/adduser">Add User</a></li>
+                            <li><a href="/edituser">Edit User</a></li>
+                            <li class="divider"></li>
+                            <li><a href="/logs">View Logs</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 {% endif %}
             </div>
