@@ -29,6 +29,18 @@ def login_required(f):
     return wrap
 
 ##
+# Admin Required Decorator
+def admin_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if is_admin(uid):
+            return f(*args, **kwargs)
+        else:
+            flash('You must be an administrator to view that page.')
+            return redirect(url_for('home'))
+    return wrap
+
+##
 # SQLite Database Connector
 # Returns the db connection.
 def connect_db():
