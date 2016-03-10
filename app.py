@@ -123,6 +123,14 @@ def get_login(uid):
     return result[0]
 
 ##
+# Get UID from login
+def get_uid(login):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT id FROM users WHERE login= "' + login + '"')
+    result = cur.fetchone()
+    return result[0]
+
+##
 # Does this user already exist
 def user_exists(login):
     g.db = connect_db()
@@ -130,6 +138,25 @@ def user_exists(login):
     if len(cur.fetchall()) > 0:
         return True
     return False
+
+##
+# Logs an action
+def log_action(uid, action):
+    
+    # ACTIONS
+    #1|Successful login
+    #2|Failed login
+    #3|Logout
+    #4|Server started
+    #5|Server restarted
+    #6|Server stopped
+    #7|Server updated
+
+    g.db = connect_db()
+    cur = g.db.execute('INSERT INTO loggedactions(user, action, time) VALUES (?,?,datetime("now"))', (uid, action))
+    g.db.commit()
+    g.db.close()
+
 
 ####################################### PAGE FUNCTIONS ######################################
 
@@ -145,21 +172,25 @@ def home():
             # run the start command
             results = "Starting the server...<br /><br />"
             results += check_output([app.script, "start"])
+            log_action(session['uid'], 4)
             results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'stop':
             # run the stop action
             results = "Stoping the server...<br /><br />"
             results += check_output([app.script, "stop"])
+            log_action(session['uid'], 6)
             results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'restart':
             # run the restart action
             results = "Restarting the server...<br /><br />"
             results += check_output([app.script, "restart"])
+            log_action(session['uid'], 5)
             results = Markup(results.replace('\n', '<br />'))
         elif request.form['action'] == 'update':
             # run the update action
             results = "Updating the server...<br /><br />"
             results += check_output([app.script, "update"])
+            log_action(session['uid'], 7)
             results = Markup(results.replace('\n', '<br />'))
         else:
             # invalid action!
@@ -188,11 +219,15 @@ def login():
         uid = check_login(request.form['username'], request.form['password'])
         if uid == False:
             error = 'Invalid credentials. Please try again.'
+            login = request.form['username']
+            if user_exists(login):
+                log_action(get_uid(login), 2)
         else:
             session['logged_in'] = True
             session['uid'] = uid
             session['username'] = request.form['username']
             session['priv'] = is_admin(uid)
+            log_action(session['uid'], 1)
             flash('You were just logged in.')
             return redirect(url_for('home'))
         #if request.form['username'] != 'ADMIN' or request.form['password'] != 'ADMIN':
@@ -208,6 +243,7 @@ def login():
 #
 @app.route('/logout')
 def logout():
+    log_action(session['uid'], 3)
     session.pop('logged_in', None)
     session.pop('uid', None)
     session.pop('priv', None)
