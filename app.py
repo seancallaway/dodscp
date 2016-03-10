@@ -130,7 +130,7 @@ def home():
     cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 10;')
     actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
     g.db.close()
-    return render_template('index.html', actions=actions, results=results, username=session['username'])
+    return render_template('index.html', actions=actions, results=results, acp=session['priv'], username=session['username'])
 
 #
 # WELCOME PAGE
