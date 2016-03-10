@@ -29,6 +29,18 @@ def login_required(f):
     return wrap
 
 ##
+# Admin Required Decorator
+def admin_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if is_admin(session['uid']):
+            return f(*args, **kwargs)
+        else:
+            flash('You must be an administrator to view that page.')
+            return redirect(url_for('home'))
+    return wrap
+
+##
 # SQLite Database Connector
 # Returns the db connection.
 def connect_db():
@@ -72,6 +84,16 @@ def change_password(login, password):
     g.db.close()
 
 ##
+# Change admin status
+# status: 1 = admin, 0 = user
+def change_admin(login, status=0):
+    g.db = connect_db()
+    cur = g.db.execute('UPDATE users SET isAdmin=? WHERE login=?', (status, login))
+    g.db.commit()
+    g.db.close()
+
+
+##
 # Create user
 def create_user(login, password, isAdmin=0):
     salt = uuid4().hex
@@ -89,6 +111,23 @@ def is_admin(uid):
     cur = g.db.execute('SELECT isADMIN FROM users WHERE id=' + str(uid))
     result = cur.fetchone()
     if result[0] > 0:
+        return True
+    return False
+
+##
+# Get login from UID
+def get_login(uid):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT login FROM users WHERE id=' + str(uid))
+    result = cur.fetchone()
+    return result[0]
+
+##
+# Does this user already exist
+def user_exists(login):
+    g.db = connect_db()
+    cur = g.db.execute('SELECT id FROM users WHERE login= "' + login + '"')
+    if len(cur.fetchall()) > 0:
         return True
     return False
 
@@ -130,7 +169,7 @@ def home():
     cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 10;')
     actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
     g.db.close()
-    return render_template('index.html', actions=actions, results=results, username=session['username'])
+    return render_template('index.html', actions=actions, results=results, acp=session['priv'], username=session['username'])
 
 #
 # WELCOME PAGE
@@ -196,6 +235,88 @@ def changepass():
             flash('The passwords you entered do not match. Please try again.')
             return render_template('changepass.html')
     return render_template('changepass.html')
+
+#
+# EDIT USER PAGE
+#
+@app.route('/edituser', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edituser():
+    if request.method == 'POST':
+        if request.form['step'] == "1":
+            # select the user and show edit fields
+            login = get_login(request.form['user'])
+            return render_template('edituser.html', userselected=True, user=login, acp=session['priv'], username=session['username'])
+        elif request.form['step'] == "2":
+            # change user
+            login = request.form['username']
+            if request.form['pass1'] != "":
+                if request.form['pass1'] == request.form['pass2']:
+                    print "Changing password for " + login + " to " + request.form['pass1']
+                    change_password(login, request.form['pass1'])
+                    admin = 0
+                    if request.form['status'] == 'admin':
+                        admin = 1
+                    change_admin(login, admin)
+                    flash('The user has been updated.')
+                    return redirect(url_for('edituser'))
+                else:
+                    flash('The passwords you entered do not match. Please try again.')
+                    return render_template('edituser.html', userselected=True, user=login, acp=session['priv'], username=session['username'])
+            else:
+                # no password entered. Just change status.
+                admin = 0
+                if request.form['status'] == 'admin':
+                    admin = 1
+                change_admin(login, admin)
+                flash('The user has been updated.')
+                return redirect(url_for('edituser'))
+            return render_template('edituser.html', acp=session['priv'], username=session['username'])
+                    
+    g.db = connect_db()
+    cur = g.db.execute('SELECT id, login FROM users WHERE login != "ADMIN"')
+    users = [dict(uid=row[0], login=row[1]) for row in cur.fetchall()]
+    g.db.close()
+    return render_template('edituser.html', users=users, acp=session['priv'], username=session['username'])
+
+#
+# LOGS PAGE
+#
+@app.route('/logs')
+@login_required
+@admin_required
+def logs():
+    g.db = connect_db()
+    cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 50;')
+    actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
+    g.db.close()
+    return render_template('logs.html', actions=actions, acp=session['priv'], username=session['username'])
+
+#
+# ADD USER PAGE
+#
+@app.route('/adduser', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def adduser():
+    if request.method == 'POST':
+        if request.form['pass1'] == request.form['pass2']:
+            if user_exists(request.form['username']) == False:
+                # create the user
+                admin = 0
+                if request.form['status'] == 'admin':
+                    admin = 1
+                create_user(request.form['username'], request.form['pass1'], admin)
+                flash(request.form['username'] + ' has been created.')
+                return render_template('adduser.html', acp=session['priv'], username=session['username'])
+            else:
+                flash('The username you entered is already in use.')
+                return render_template('adduser.html', acp=session['priv'], username=session['username'])
+        else:
+            flash('The passwords you entered do not match. Please try again.')
+            return render_template('adduser.html', acp=session['priv'], username=session['username'])
+    return render_template('adduser.html', acp=session['priv'], username=session['username'])
 
 
 if __name__ == '__main__':

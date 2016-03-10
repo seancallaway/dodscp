@@ -1,15 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3>Latest Actions</h3>
-<table>
-<tr><td><strong>TIME</strong></td><td>&nbsp;&nbsp;&nbsp;</td><td><strong>USER</strong></td><td>&nbsp;&nbsp;&nbsp;</td><td><strong>ACTION</strong></td></tr>
-{% for action in actions %}
-    <tr><td>{{ action.time }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.user }}</td><td>&nbsp;&nbsp;&nbsp;</td><td>{{ action.action }}</td></tr>
-{% endfor %}
-</table>
 <br />
-<h3>Actions</h3>
+<h2>Actions</h2>
 <form action="" method="post">
     <select name="action">
         <option value="start">Start</option>
