@@ -74,7 +74,7 @@ def create_user(login, password, isAdmin=0):
 # Is the user an admin?
 def is_admin(uid):
     g.db = connect_db()
-    cur = g.db.execute('SELECT isADMIN FROM users WHERE id=?', uid)
+    cur = g.db.execute('SELECT isADMIN FROM users WHERE id=' + str(uid))
     result = cur.fetchone()
     if result[0] > 0:
         return True
@@ -118,14 +118,14 @@ def home():
     cur = g.db.execute('SELECT time, (SELECT users.login FROM users WHERE users.id = loggedactions.user), actions.action FROM loggedactions LEFT JOIN actions ON loggedactions.action = actions.id ORDER BY time DESC LIMIT 10;')
     actions = [dict(time=row[0], user=row[1], action=row[2]) for row in cur.fetchall()]
     g.db.close()
-    return render_template('index.html', actions=actions, results=results)
+    return render_template('index.html', actions=actions, results=results, username=session['username'])
 
 #
 # WELCOME PAGE
 #
 @app.route('/welcome')
 def welcome():
-    return render_template('welcome.html')
+    return render_template('welcome.html', username=session['username'])
 
 #
 # LOGIN PAGE
@@ -140,6 +140,7 @@ def login():
         else:
             session['logged_in'] = True
             session['uid'] = uid
+            session['username'] = request.form['username']
             session['priv'] = is_admin(uid)
             flash('You were just logged in.')
             return redirect(url_for('home'))
@@ -159,6 +160,7 @@ def logout():
     session.pop('logged_in', None)
     session.pop('uid', None)
     session.pop('priv', None)
+    session.pop('username', None)
     flash('You were just logged out.')
     return redirect(url_for('home'))
 
