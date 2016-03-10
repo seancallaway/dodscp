@@ -72,6 +72,16 @@ def change_password(login, password):
     g.db.close()
 
 ##
+# Change admin status
+# status: 1 = admin, 0 = user
+def change_admin(login, status=0):
+    g.db = connect_db()
+    cur = g.db.execute('UPDATE users SET isAdmin=? WHERE login=?', (status, login))
+    g.db.commit()
+    g.db.close()
+
+
+##
 # Create user
 def create_user(login, password, isAdmin=0):
     salt = uuid4().hex
