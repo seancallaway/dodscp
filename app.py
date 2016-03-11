@@ -151,6 +151,11 @@ def log_action(uid, action):
     #5|Server restarted
     #6|Server stopped
     #7|Server updated
+    #8|Reset Own Password
+    #9|Reset Anothers Password
+    #10|Created User
+    #11|Deleted User
+    #12|Modified Admin Status
 
     g.db = connect_db()
     cur = g.db.execute('INSERT INTO loggedactions(user, action, time) VALUES (?,?,datetime("now"))', (uid, action))
@@ -261,6 +266,7 @@ def changepass():
         # process password change
         if request.form['pass1'] == request.form['pass2']:
             change_password(session['username'], request.form['pass1'])
+            log_action(session['uid'], 8)
             session.pop('logged_in', None)
             session.pop('uid', None)
             session.pop('priv', None)
@@ -291,10 +297,12 @@ def edituser():
                 if request.form['pass1'] == request.form['pass2']:
                     print "Changing password for " + login + " to " + request.form['pass1']
                     change_password(login, request.form['pass1'])
+                    log_action(session['uid'], 9)
                     admin = 0
                     if request.form['status'] == 'admin':
                         admin = 1
                     change_admin(login, admin)
+                    log_action(session['uid'], 12)
                     flash('The user has been updated.')
                     return redirect(url_for('edituser'))
                 else:
@@ -306,6 +314,7 @@ def edituser():
                 if request.form['status'] == 'admin':
                     admin = 1
                 change_admin(login, admin)
+                log_action(session['uid'], 12)
                 flash('The user has been updated.')
                 return redirect(url_for('edituser'))
             return render_template('edituser.html', acp=session['priv'], username=session['username'])
@@ -344,6 +353,7 @@ def adduser():
                 if request.form['status'] == 'admin':
                     admin = 1
                 create_user(request.form['username'], request.form['pass1'], admin)
+                log_action(session['uid'], 10)
                 flash(request.form['username'] + ' has been created.')
                 return render_template('adduser.html', acp=session['priv'], username=session['username'])
             else:
