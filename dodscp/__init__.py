@@ -8,11 +8,10 @@ import sqlite3
 
 app = Flask(__name__)
 
-app.database = "dodscp.db"
-app.script = "/home/sean/dodsserver"
-
-# TODO: Move and replace this.
-app.secret_key = "OgV@DeND@qywQ@pIvh4l@qFifyb"
+app.config.from_object('config')
+app.database = app.config['DATABASE']
+app.script = app.config['SCRIPT']
+app.secret_key = app.config['SECRET_KEY']
 
 ###################################### NON-PAGE FUNCTIONS ###################################
 
