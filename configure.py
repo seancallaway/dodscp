@@ -5,45 +5,52 @@ import getpass
 import os
 import os.path
 
-##
-# Prints a header for the configuration script
-def print_header():
-    print '       == DODSCP CONFIGURATION SCRIPT =='
-    print ' '
-    print 'This program will configure DODSCP for your use.'
-    print 'It is intended to be run before configuring your '
-    print 'web server and launching the application.'
-    print ' '
 
-##
-# Writes the configuration file
+def print_header():
+    """Prints a header for the configuration script."""
+    print('       == DODSCP CONFIGURATION SCRIPT ==')
+    print()
+    print('This program will configure DODSCP for your use.')
+    print('It is intended to be run before configuring your ')
+    print('web server and launching the application.')
+    print()
+
+
 def write_file(db, sk, path):
+    """Writes the configuration file to disk."""
     # TODO: Verify we can write to the file. If not, print out what
     #       should be in the file, so the user can copy-paste once 
     #       their permissions issue is resolved.
-    fo = open('testconfig.py', 'w+')
-    fo.write('DATABASE = "' + db + '"\n')
-    fo.write('SECRET_KEY = "' + sk + '"\n')
-    fo.write('SCRIPT = "' + path + '"\n')
-    fo.close()
 
-##
-# Configure DODSCP
+    filename = 'config.py'
+    contents = f'DATABASE = "{db}"\nSECRET_KEY = "{sk}"\nSCRIPT = "{path}"\n'
+    try:
+        with open(filename, 'w+') as fo:
+            fo.write(contents)
+    except:
+        print('!!! ERROR !!!')
+        print(f'Unable to write to {filename}!')
+        print('Please create the file and place the following into it:\n')
+        print(contents)
+        print()
+
+
 def main():
+    """Main entry point for DODSCP configuration script."""
     print_header()
     
     #
     # CREATE DATABASE
     #
-    print '* CREATING THE DATABASE *'
-    dbname = raw_input('Enter the name of the DB to create (Default: dodscp.db): ')
+    print('* CREATING THE DATABASE *')
+    dbname = input('Enter the name of the DB to create (Default: dodscp.db): ')
     if not dbname:
         dbname = 'dodscp.db'
 
     con = sqlite3.connect(dbname)
 
-    print ' '
-    print '* CREATING DATABASE SCHEMA *'
+    print()
+    print('* CREATING DATABASE SCHEMA *')
 
     cur = con.cursor()
 
@@ -71,8 +78,8 @@ def main():
     #
     # ADMIN PASSWORD
     #
-    print ' '
-    print '* SETTING ADMIN PASSWORD *'
+    print()
+    print('* SETTING ADMIN PASSWORD *')
     passmatch = False
     while not passmatch:
         pass1 = getpass.getpass('Enter ADMIN password: ')
@@ -81,7 +88,7 @@ def main():
             passmatch = True
         else:
             passmatch = False
-            print 'Passwords do not match. Please try again.'
+            print('Passwords do not match. Please try again.')
 
     salt = uuid4().hex
     hashed = sha256(pass2.encode() + salt.encode()).hexdigest()
@@ -91,39 +98,40 @@ def main():
     #
     # SECRET KEY
     #
-    print ' '
-    print '* GENERATING SECRET_KEY *'
+    print()
+    print('* GENERATING SECRET_KEY *')
     sk = uuid4().hex
 
     #
     # SCRIPT NAME
     #
-    print ' '
-    print '* SETTING SCRIPT NAME *'
-    print 'The path you enter should be the full path to the Linux '
-    print 'Game Server Managers script (e.g. /home/sean/csgoserver)'
+    print()
+    print('* SETTING SCRIPT NAME *')
+    print('The path you enter should be the full path to the Linux ')
+    print('Game Server Managers script (e.g. /home/sean/csgoserver)')
     goodscript = False
     while not goodscript:
-        script = raw_input('Enter the path to the script: ')
+        script = input('Enter the path to the script: ')
         if os.path.isfile(script) and os.access(script, os.R_OK):
             # script exists and is readable
             goodscript = True
             if not os.access(script, os.X_OK):
-                print script + ' is not executable. Please fix that.'
+                print(f'{script} is not executable. Please fix that.')
         else:
             goodscript = False
-            print script + ' does not exist or is not readable. Try again.'
+            print(f'{script} does not exist or is not readable. Try again.')
 
     #
     # GENERATE CONFIGURATION FILE
     #
-    print ' '
-    print '* GENERATING CONFIGURATION FILE *'
+    print()
+    print('* GENERATING CONFIGURATION FILE *')
     write_file(dbname, sk, script)
 
-    print ' '
-    print '! DODSCP CONFIGURATION COMPLETE !'
-    print ' '
+    print()
+    print('! DODSCP CONFIGURATION COMPLETE !')
+    print()
+
 
 if __name__ == '__main__':
     main()
